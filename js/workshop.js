@@ -45,9 +45,19 @@
 
 
   var sent = {};
+  // GA4 이벤트 이름 (view는 GA4가 page_view로 자동 기록)
+  var GA = { calc: 'calc_start', result: 'calc_complete', kakao: 'kakao_click', tel: 'tel_click', form: 'form_open' };
+  function ga(e) {
+    if (!GA[e] || typeof window.gtag !== 'function') return;
+    var p = { traffic_src: srcKey, ad: adKey || '-', campaign: campaign || '-' };
+    if (e === 'result' && typeof R !== 'undefined' && R) { p.plan = R.kind || '-'; p.price = String(R.price || '-'); }
+    try { window.gtag('event', GA[e], p); } catch (x) {   }
+  }
   function hit(e, once) {
-    if (LOCAL || SHOT || (once && sent[e])) return;
+    if (SHOT || (once && sent[e])) return;
     sent[e] = 1;
+    ga(e);
+    if (LOCAL) return;
     var body = 'e=' + e + '&s=' + encodeURIComponent(srcKey) + '&v=' + encodeURIComponent(statAd);
     try {
       if (navigator.sendBeacon) navigator.sendBeacon('hit.php', new Blob([body], { type: 'application/x-www-form-urlencoded' }));
@@ -926,7 +936,7 @@
     h += '<p class="r-note">' + (R.kind === 'corp' ? '법인세 신고 비용은 따로이고, 신고 전에 먼저 알려 드려요.' : '6개월 이용 기준이에요. 5월 종합소득세 신고 비용은 따로이고, 신고 전에 먼저 알려 드려요.') + '</p>';
     h += '<div class="r-act tm"><p class="tm-how">어떻게 상담받으실래요?</p>' +
          '<a class="btn btn-kakao btn-xl" href="https://pf.kakao.com/_Mxojqs/chat" target="_blank" rel="noopener" data-hit="kakao"><svg class="ico" aria-hidden="true"><use href="#i-chat"/></svg>카카오톡으로 상담하기</a>' +
-         '<a class="btn btn-blue btn-xl" href="tel:0507-1428-6446"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M6.62 10.79a15.05 15.05 0 0 0 6.59 6.59l2.2-2.2a1 1 0 0 1 1.02-.24c1.12.37 2.33.57 3.57.57a1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.25.2 2.45.57 3.57a1 1 0 0 1-.25 1.02z"/></svg>전화로 상담하기 0507-1428-6446</a>' +
+         '<a class="btn btn-blue btn-xl" href="tel:0507-1428-6446" data-hit="tel"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M6.62 10.79a15.05 15.05 0 0 0 6.59 6.59l2.2-2.2a1 1 0 0 1 1.02-.24c1.12.37 2.33.57 3.57.57a1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.25.2 2.45.57 3.57a1 1 0 0 1-.25 1.02z"/></svg>전화로 상담하기 0507-1428-6446</a>' +
          '<button class="r-again" type="button" data-to="again">다시 계산하기</button></div>';
     $('c-result').innerHTML = h;
     $('c-pick').innerHTML = esc([R.ind, R.kind === 'corp' ? '' : R.rev, R.kind === 'corp' ? '' : '직원 ' + R.emp].filter(Boolean).join(' · ')) + '<br>→ ' + R.plan + ' · <b>' + esc(R.price) + '</b> (부가세 별도)';
