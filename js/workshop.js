@@ -935,12 +935,36 @@
     h += '<ul class="r-list">' + list.map(function (x) { return '<li>' + CK + '<span>' + x.replace(/ <small>/, '</span><small>').replace(/<\/small>$/, '</small>') + (x.indexOf('<small>') < 0 ? '</span>' : '') + '</li>'; }).join('') + '</ul>';
     h += '<p class="r-note">' + (R.kind === 'corp' ? '법인세 신고 비용은 따로이고, 신고 전에 먼저 알려 드려요.' : '6개월 이용 기준이에요. 5월 종합소득세 신고 비용은 따로이고, 신고 전에 먼저 알려 드려요.') + '</p>';
     h += '<div class="r-act tm"><p class="tm-how">어떻게 상담받으실래요?</p>' +
-         '<a class="btn btn-kakao btn-xl" href="https://pf.kakao.com/_Mxojqs/chat" target="_blank" rel="noopener" data-hit="kakao"><svg class="ico" aria-hidden="true"><use href="#i-chat"/></svg>카카오톡으로 상담하기</a>' +
+         '<a class="btn btn-kakao btn-xl" href="https://pf.kakao.com/_Mxojqs/chat" target="_blank" rel="noopener" data-hit="kakao" data-copy><svg class="ico" aria-hidden="true"><use href="#i-chat"/></svg>이 결과로 카톡 상담하기</a>' +
+         '<p data-copy-hint style="margin:-2px 0 10px;font-size:14px;line-height:1.5;color:#6b7280;text-align:center">누르면 계산 결과가 복사돼요. 카톡 창에 <b>붙여넣기</b>만 하세요.</p>' +
          '<a class="btn btn-blue btn-xl" href="tel:0507-1428-6446" data-hit="tel"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M6.62 10.79a15.05 15.05 0 0 0 6.59 6.59l2.2-2.2a1 1 0 0 1 1.02-.24c1.12.37 2.33.57 3.57.57a1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.25.2 2.45.57 3.57a1 1 0 0 1-.25 1.02z"/></svg>전화로 상담하기 0507-1428-6446</a>' +
          '<button class="r-again" type="button" data-to="again">다시 계산하기</button></div>';
     $('c-result').innerHTML = h;
     $('c-pick').innerHTML = esc([R.ind, R.kind === 'corp' ? '' : R.rev, R.kind === 'corp' ? '' : '직원 ' + R.emp].filter(Boolean).join(' · ')) + '<br>→ ' + R.plan + ' · <b>' + esc(R.price) + '</b> (부가세 별도)';
   }
+  /* 카톡 상담: 링크는 그대로 열리게 두고(앱 안 브라우저가 지연된 새 창을 막으므로 window.open을 쓰지 않음),
+     누르는 순간 계산 결과를 복사해 둔다 — 손님은 카톡 창에 붙여넣고 보내기만 하면 된다 */
+  function resultText() {
+    return '[택스민 기장료 계산 결과]\n업종: ' + R.ind + (R.kind === 'corp' ? '' : '\n작년 매출: ' + R.rev + '\n4대보험 직원: ' + R.emp) +
+      '\n→ ' + plain(R.plan) + ' ' + R.price + ' (부가세 별도)\n이 내용으로 상담 받고 싶어요.';
+  }
+  function copyNow(text) {
+    var ok = false;
+    try {
+      var t = doc.createElement('textarea'); t.value = text; t.setAttribute('readonly', '');
+      t.style.position = 'fixed'; t.style.top = '0'; t.style.opacity = '0';
+      doc.body.appendChild(t); t.select(); t.setSelectionRange(0, text.length);
+      ok = doc.execCommand('copy'); doc.body.removeChild(t);
+    } catch (x) {   }
+    try { if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(text).catch(function () {}); } catch (x) {   }
+    return ok;
+  }
+  $('c-result').addEventListener('click', function (e) {
+    if (!e.target.closest('[data-copy]') || !R) return;
+    copyNow(resultText());
+    var tip = $('c-result').querySelector('[data-copy-hint]');
+    if (tip) tip.innerHTML = '<b>계산 결과를 복사했어요.</b> 카톡 창에 붙여넣고 보내 주세요.';
+  });
   var _show = show;
   show = function (name, back) { if (name === 'result') renderResult(); _show(name, back); };
   body.addEventListener('click', function (e) {
